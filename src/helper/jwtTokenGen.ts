@@ -24,3 +24,4 @@ export function verifyToken(token: string, secret: string): JwtPayload {
     throw new Error("Invalid token");
   }
 }
+
