@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import createHttpError from "http-errors";
 import UserModel from "../../models/user/userModels";
-
-import Bcrypt from "bcrypt";
+import hashPassword from "../../helper/hashedPass";
+import { signToken } from "../../helper/jwtTokenGen";
+import { config } from "../../config/config";
 
 const createUser = async (req: Request, res: Response, next: NextFunction) => {
   /// validtaion
@@ -21,13 +22,28 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
   }
 
   // password hashed
-  const hashedPassword = await Bcrypt.has(password, 10);
+  const hashedPassword = await hashPassword(password, 10);
 
-  /// Process
+  /// Create  a new User in Database
+  const newUser = await UserModel.create({
+    name,
+    email,
+    password: hashedPassword,
+  });
+
+  const payload = {
+    id: newUser._id,
+    name: newUser.name,
+  };
+
+  const token = signToken(payload, config.JWTSECKey as string, {
+    expiresIn: "1d",
+  });
+
+  await newUser.save();
 
   // responce
-
-  res.status(200).json({ message: "user Reguster" });
+  res.status(200).json({ message: "user Reguster", token });
 };
 
 export { createUser };
