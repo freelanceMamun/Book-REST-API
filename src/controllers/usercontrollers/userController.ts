@@ -14,33 +14,40 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
     return next(error);
   }
 
-  const user = await UserModel.findOne({ email });
-  if (user) {
-    const error = createHttpError(400, "User already exists with email.");
-    // Send the error in global error
-    next(error);
+  let token = "";
+
+  try {
+    const user = await UserModel.findOne({ email });
+
+    if (user) {
+      const error = createHttpError(400, "User already exists with email.");
+      // Send the error in global error
+      next(error);
+    }
+
+    // password hashed
+    const hashedPassword = await hashPassword(password, 10);
+
+    /// Create  a new User in Database
+    const newUser = await UserModel.create({
+      name,
+      email,
+      password: hashedPassword,
+    });
+
+    const payload = {
+      id: newUser._id,
+      name: newUser.name,
+    };
+
+    token = signToken(payload, config.JWTSECKey as string, {
+      expiresIn: "1d",
+    });
+
+    await newUser.save();
+  } catch (error) {
+    return next(createHttpError(500, "Error while Getting user"));
   }
-
-  // password hashed
-  const hashedPassword = await hashPassword(password, 10);
-
-  /// Create  a new User in Database
-  const newUser = await UserModel.create({
-    name,
-    email,
-    password: hashedPassword,
-  });
-
-  const payload = {
-    id: newUser._id,
-    name: newUser.name,
-  };
-
-  const token = signToken(payload, config.JWTSECKey as string, {
-    expiresIn: "1d",
-  });
-
-  await newUser.save();
 
   // responce
   res.status(200).json({ message: "user Reguster", token });
