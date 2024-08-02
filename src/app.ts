@@ -6,7 +6,6 @@ import bookRouter from "./router/book/bookRouter";
 const app = express();
 
 app.use(express.json());
-app.use();
 
 // Routes
 
