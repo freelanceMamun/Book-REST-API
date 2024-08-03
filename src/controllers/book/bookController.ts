@@ -14,7 +14,6 @@ const createBook = async (req: Request, res: Response, next: NextFunction) => {
   const files = req.files as { [fieldname: string]: Express.Multer.File[] };
   const coverImageMimeType = files.coverImage[0].mimetype.split("/").at(-1);
 
- 
   const filename = files.coverImage[0].filename;
 
   const filepath = path.resolve(
@@ -165,4 +164,41 @@ const bookUpdate = async (req: Request, res: Response, next: NextFunction) => {
   });
 };
 
-export { createBook, bookUpdate };
+// Get all Book handeler
+
+const ListAllBook = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Extract pagination parameters from the query
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limit = parseInt(req.query.limit as string, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    // Fetch the books with pagination
+    const books = await BookModel.find().skip(skip).limit(limit);
+
+    return res.status(200).json(books);
+  } catch (error) {
+    next(createHttpError(500, "500 Error while getting a book"));
+  }
+};
+
+const getSingleBook = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const { bookdId } = req.params;
+
+  try {
+    const findBook = await BookModel.findOne({ _id: bookdId });
+
+    if (!findBook) {
+      next(createHttpError(403, "Book not found"));
+    }
+    return res.status(200).json(findBook);
+  } catch (error) {
+    next(createHttpError(500, "500 Error while getting a book"));
+  }
+};
+
+export { createBook, bookUpdate, ListAllBook, getSingleBook };
