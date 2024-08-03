@@ -4,6 +4,7 @@ import cloudinary from "../../config/cloudinary";
 import path from "path";
 import fs from "fs";
 import createHttpError from "http-errors";
+import { AuthRequest } from "../../middlewares/authenticate";
 
 /// Create a Book fun handeler
 
@@ -49,11 +50,13 @@ const createBook = async (req: Request, res: Response, next: NextFunction) => {
 
     // File upload in Cloudinary end
 
+    const _req = req as AuthRequest;
+
     /// Create a book
     const newbook = await BookModel.create({
       title,
       genre,
-      author: "66abbca13f930a6583d56f5d",
+      author: _req.userID,
       coverImage: uploadResult.secure_url,
       file: bookfileUploadResult.secure_url,
     });
