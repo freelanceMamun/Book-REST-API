@@ -193,12 +193,43 @@ const getSingleBook = async (
     const findBook = await BookModel.findOne({ _id: bookdId });
 
     if (!findBook) {
-      next(createHttpError(403, "Book not found"));
+      return next(createHttpError(403, "Book not found"));
     }
     return res.status(200).json(findBook);
   } catch (error) {
-    next(createHttpError(500, "500 Error while getting a book"));
+    return next(createHttpError(500, "500 Error while getting a book"));
   }
 };
 
-export { createBook, bookUpdate, ListAllBook, getSingleBook };
+const deleteBook = async (req: Request, res: Response, next: NextFunction) => {
+  const { bookdId } = req.params;
+
+  try {
+    const findBook = await BookModel.findOne({ _id: bookdId });
+
+    if (!findBook) {
+      return next(createHttpError(403, "Book not found"));
+    }
+
+    const _req = req as AuthRequest;
+
+    if (findBook.author.toString() !== _req.userID) {
+      return next(createHttpError(403, { message: "Unauthorized" }));
+    }
+
+    const coverFileSplit = findBook.coverImage.split("/");
+
+    const coverImagePublicId =
+      coverFileSplit.at(-2) + "/" + coverFileSplit.at(-1)?.split(".").at(-2);
+
+    //   await cloudinary.uploader.destroy();
+
+    console.log(coverImagePublicId);
+
+    res.json({});
+  } catch (error) {
+    return next(createHttpError(500, "500 Error while getting a book"));
+  }
+};
+
+export { createBook, bookUpdate, ListAllBook, getSingleBook, deleteBook };
