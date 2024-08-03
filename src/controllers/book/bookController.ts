@@ -2,11 +2,13 @@ import { Request, Response, NextFunction } from "express";
 import BookModel from "../../models/bookmodel/bookModels";
 import cloudinary from "../../config/cloudinary";
 import path from "path";
+import fs from "fs";
 import createHttpError from "http-errors";
 
 /// Create a Book fun handeler
 
 const createBook = async (req: Request, res: Response, next: NextFunction) => {
+  const { title, genre } = req.body;
   const files = req.files as { [fieldname: string]: Express.Multer.File[] };
   const coverImageMimeType = files.coverImage[0].mimetype.split("/").at(-1);
 
@@ -19,6 +21,8 @@ const createBook = async (req: Request, res: Response, next: NextFunction) => {
   );
 
   try {
+    // File upload in Cloudinary
+
     const uploadResult = await cloudinary.uploader.upload(filepath, {
       filename_override: filename,
       folder: "book-covers",
@@ -43,11 +47,23 @@ const createBook = async (req: Request, res: Response, next: NextFunction) => {
       }
     );
 
+    // File upload in Cloudinary end
 
+    /// Create a book
+    const newbook = await BookModel.create({
+      title,
+      genre,
+      author: "66abbca13f930a6583d56f5d",
+      coverImage: uploadResult.secure_url,
+      file: bookfileUploadResult.secure_url,
+    });
 
+    await fs.promises.unlink(filepath);
+    await fs.promises.unlink(bookFilepath);
 
-    
-    res.status(201).json({ msg: "Create a Book" });
+    // save book in database
+    await newbook.save();
+    res.status(201).json({ msg: "Create a Book", newbook });
   } catch (err) {
     next(createHttpError(500, "Error while uploading the files"));
   }
