@@ -218,15 +218,22 @@ const deleteBook = async (req: Request, res: Response, next: NextFunction) => {
     }
 
     const coverFileSplit = findBook.coverImage.split("/");
-
     const coverImagePublicId =
       coverFileSplit.at(-2) + "/" + coverFileSplit.at(-1)?.split(".").at(-2);
 
-    //   await cloudinary.uploader.destroy();
+    const bookFileSplit = findBook.file.split("/");
 
-    console.log(coverImagePublicId);
+    const bookfilesPublicId =
+      bookFileSplit.at(-2) + "/" + bookFileSplit.at(-1)?.split(".").at(-2);
 
-    res.json({});
+    await cloudinary.uploader.destroy(coverImagePublicId);
+    await cloudinary.uploader.destroy(bookfilesPublicId, {
+      resource_type: "raw",
+    });
+
+    await BookModel.deleteOne({ _id: bookdId });
+
+    res.status(204).json({ id: bookdId });
   } catch (error) {
     return next(createHttpError(500, "500 Error while getting a book"));
   }
