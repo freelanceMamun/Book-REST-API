@@ -9,7 +9,7 @@ import { AuthRequest } from "../../middlewares/authenticate";
 /// Create a Book fun handeler
 
 const createBook = async (req: Request, res: Response, next: NextFunction) => {
-  const { title, genre } = req.body;
+  const { title, genre, description } = req.body;
 
   const files = req.files as { [fieldname: string]: Express.Multer.File[] };
   const coverImageMimeType = files.coverImage[0].mimetype.split("/").at(-1);
@@ -58,6 +58,7 @@ const createBook = async (req: Request, res: Response, next: NextFunction) => {
       title,
       genre,
       author: _req.userID,
+      description,
       coverImage: uploadResult.secure_url,
       file: bookfileUploadResult.secure_url,
     });
@@ -169,12 +170,14 @@ const bookUpdate = async (req: Request, res: Response, next: NextFunction) => {
 const ListAllBook = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Extract pagination parameters from the query
-    const page = parseInt(req.query.page as string, 10) || 1;
-    const limit = parseInt(req.query.limit as string, 10) || 10;
-    const skip = (page - 1) * limit;
+    // const page = parseInt(req.query.page as string, 10) || 1;
+    // const limit = parseInt(req.query.limit as string, 10) || 10;
+    // const skip = (page - 1) * limit;
 
     // Fetch the books with pagination
-    const books = await BookModel.find().skip(skip).limit(limit);
+    const books = await BookModel.find().populate("author", "name email");
+    // .skip(skip)
+    // .limit(limit);
 
     return res.status(200).json(books);
   } catch (error) {
@@ -190,13 +193,18 @@ const getSingleBook = async (
   const { bookdId } = req.params;
 
   try {
-    const findBook = await BookModel.findOne({ _id: bookdId });
+    const findBook = await BookModel.findOne({ _id: bookdId }).populate(
+      "author",
+      "name email"
+    );
 
     if (!findBook) {
       return next(createHttpError(403, "Book not found"));
     }
     return res.status(200).json(findBook);
   } catch (error) {
+    console.log(error);
+
     return next(createHttpError(500, "500 Error while getting a book"));
   }
 };
