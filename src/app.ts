@@ -4,9 +4,12 @@ import globalErrorHandler from "./middlewares/globalMiddlewares";
 import userRouter from "./router/user/userRouter";
 import bookRouter from "./router/book/bookRouter";
 import cors from "cors";
+import morgan from "morgan";
 const app = express();
 
 app.use(express.json());
+app.use(morgan("tiny"));
+
 app.use(
   cors({
     origin: "",
